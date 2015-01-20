@@ -97,16 +97,17 @@
       //start=localStorage.getItem("positionLatLng");
       end = 'Liceo de Cagayan university';
       directionService();
+      settingTheResult( );
       
     }
-  
+    var directionsService = new google.maps.DirectionsService();
+    var directionsDisplay = new google.maps.DirectionsRenderer(); 
+    function settingTheResult( ){
+        directionsDisplay.setMap( map );
+        directionsDisplay.setOptions( { suppressMarkers: true } );
+        directionsDisplay.setPanel( document.getElementById('panel') );   
+    }
     function directionService( ) {
-       var directionsService = new google.maps.DirectionsService();
-       var directionsDisplay = new google.maps.DirectionsRenderer(); 
-       directionsDisplay.setMap( map );
-       directionsDisplay.setOptions( { suppressMarkers: true } );
-       directionsDisplay.setPanel( document.getElementById('panel') );
-
        var request = {
        origin:start, 
        destination:end,
