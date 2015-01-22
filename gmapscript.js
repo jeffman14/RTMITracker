@@ -5,8 +5,6 @@
     var infoWindow;
     var eta;
 
-//localStorage.removeItem("lastname");
-//alert (localStorage.getItem("positionLatLng"));
     function load() {
       document.getElementById("panel").style.visibility = "hidden";
       document.getElementById("buttonClose").style.visibility = "hidden";
@@ -31,28 +29,25 @@
       }
       });
 
-    
-    
       infoWindow = new google.maps.InfoWindow;
       $.get( "/phpxml_gen.php" , function ( response ) {
         response.map( function ( each ) {
-          var point = new google.maps.LatLng(parseFloat( each.lat ),parseFloat( each.lng ));         
-
-          var html = "Bus <b>" + each.bodyno + "</b> from <b>" + each.origin+ "</b> to <b>"+ each.desti + "</b> at <b>" + each.speed + "</b>Kph "+" with <b>" + each.vacancy+ "</b> vacant seats. ETA <b>" + each.eta+"</b>"+"Current Location:"+each.address;
-          var marker = new google.maps.Marker({
+            //create variable point as the latitude and longitude
+            var point = new google.maps.LatLng(parseFloat( each.lat ),parseFloat( each.lng ));  
+            //create variable html, this will hold information to be displayed in infowindow
+            var html = "Bus <b>" + each.bodyno + "</b> from <b>" + each.origin+ "</b> to <b>"+ each.desti + "</b> at <b>" + each.speed + "</b>Kph "+" with <b>" + each.vacancy+ "</b> vacant seats. ETA <b>" + each.eta+"</b>"+"Current Location:"+each.address;
+            var marker = new google.maps.Marker({
             map: map,
             position: point,
             animation: google.maps.Animation.DROP          
           });
-
           markers.push( marker );
-
           bindInfoWindow(marker, map, infoWindow, html);          
           loaded = true;
         } );                  
       } );
     }
-
+    //set interval of 1 second to retrieve data in database 
     setInterval( function ( ) {
       if ( loaded ) {
         loaded = false;
@@ -68,23 +63,10 @@
           loaded = true;
         } );
       }
-    } , 5000 );
-
-    function btnCloseDiv(){
-      //document.getElementById("buttonClose").style.visibility = "hidden";
-      //document.getElementById("panel").style.visibility = "hidden";
-      //directionsDisplay.setDirections(null);
-      //directionsDisplay.setMap(null);
-    }
+    } , 1000 );
 
     function bindInfoWindow(marker, map, infoWindow, html) {
-
       google.maps.event.addListener(marker, 'click', function( event ) {
-//document.getElementById("panel").style.visibility = "visible";
-//document.getElementById("buttonClose").style.visibility = "visible";
-//localStorage.setItem("positionLatLng", marker.getPosition( ) );
-//location.reload();
-
       infoWindow.setContent(html);
       infoWindow.open(map, marker);     
       setDirection( marker );
@@ -94,7 +76,6 @@
 
     function setDirection ( marker ) {
       start = marker.getPosition( );
-      //start=localStorage.getItem("positionLatLng");
       end = 'Liceo de Cagayan university';
       directionService();
       settingTheResult( );
@@ -117,9 +98,8 @@
 
        directionsService.route(request, function(response, status) {
          if (status == google.maps.DirectionsStatus.OK) {
-           directionsDisplay.setDirections(response);
-           var route = response.routes[0];
-            
+            directionsDisplay.setDirections(response);
+            var route = response.routes[0];
             var summaryPanel = document.getElementById('panel');
             summaryPanel.innerHTML = '';
             // For each route, display summary information.
