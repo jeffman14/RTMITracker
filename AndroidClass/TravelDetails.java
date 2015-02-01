@@ -12,6 +12,8 @@ import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import ph.busfinder.rtmitracker.DriverLogin.SigninActivity;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -28,11 +30,9 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 public class TravelDetails  extends Activity {
-	DBAdapter myDb;
 	private EditText txtTravelNo, txtDriverIDUpdate,txtAideIDUpdate;
 	Button btnUpdateEmpTravel;
 	
-	private static String url_insert_to_DB = "http://rtmitracker.16mb.com/insertUpdate_tblEmpTravel.php";
 	JSONParser jsonParser = new JSONParser();
 	private ProgressDialog pDialog;
 	int success;
@@ -49,22 +49,18 @@ public class TravelDetails  extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.travel_details);
         
-        Intent intent = getIntent();
-	      driverno = intent.getStringExtra("driverno");
-	      aideno = intent.getStringExtra("aideno");
-	      Toast.makeText(getApplicationContext(), ""+driverno+"|"+aideno, Toast.LENGTH_SHORT).show();
+        	Intent intent = getIntent();
+        	driverno = intent.getStringExtra("driverno");
+        	aideno = intent.getStringExtra("aideno");
+        	Toast.makeText(getApplicationContext(), ""+driverno+"|"+aideno, Toast.LENGTH_SHORT).show();
         
-        //open DB
-	    //openDB();
+       
 	    
         btnUpdateEmpTravel=(Button)findViewById(R.id.btnUpdateEmpTravel2);
         txtTravelNo=(EditText)findViewById(R.id.txtTravelNo);
         txtDriverIDUpdate=(EditText)findViewById(R.id.txtDriverLogin);
         txtAideIDUpdate=(EditText)findViewById(R.id.txtAideIDUpdate);
         
-        //get driver id from local database	      
-	   // Cursor cursor = myDb.getAllRows();
-	    //displayRecordSet(cursor); 
         txtDriverIDUpdate.setText(driverno);
         txtAideIDUpdate.setText(aideno);
 	    
@@ -72,26 +68,23 @@ public class TravelDetails  extends Activity {
         btnUpdateEmpTravel.setOnClickListener(new Button.OnClickListener(){
         	
 			@Override
-			public void onClick(View arg0) {
-				// TODO Auto-generated method stub							
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
 				// get Internet status
-                isInternetPresent = cd.isConnectingToInternet();
-                // check for Internet status
-                if((txtTravelNo.getText().toString().matches(""))||(txtDriverIDUpdate.getText().toString().matches(""))||(txtAideIDUpdate.getText().toString().matches(""))) {
-                	// Ask user to fill up all required field
-                    showAlertDialog(TravelDetails.this, "Empty Fields",
-                           "Fill up required fields.", false);                	
-                }
-                else if (isInternetPresent) {
-                    // Internet Connection is Present
-                	new insertToDB().execute();   	
-                }       
-                else{
-                	// Internet connection is not present
-                    // Ask user to connect to Internet
-                    showAlertDialog(TravelDetails.this, "Connection Error",
-                           "You don't have internet connection.", false);                	
-                }
+	            isInternetPresent = cd.isConnectingToInternet();
+	            // check for Internet status
+	            if (isInternetPresent) {
+	                // Internet Connection is Present
+	                // make HTTP requests
+	            	loginPost(v);
+	            	
+	            } else {
+	                // Internet connection is not present
+	                // Ask user to connect to Internet
+	                showAlertDialog(TravelDetails.this, "Connection Error",
+	                        "You don't have internet connection.", false);
+	            }
+				
         }
         });
         // get action bar  
@@ -100,126 +93,149 @@ public class TravelDetails  extends Activity {
         actionBar.show();
     }
     
-    class insertToDB extends AsyncTask<String, String, String> {
-    	
-    	@Override
-		protected void onPreExecute() {
-			super.onPreExecute();
-			pDialog = new ProgressDialog(TravelDetails.this);
-			pDialog.setMessage("Saving... Please wait");
-			pDialog.setIndeterminate(false);
-			pDialog.setCancelable(true);
-			pDialog.show();
-		}
-    	
-    	protected String doInBackground(String... args) {
-    		    		
-    		try{String driverno=txtDriverIDUpdate.getText().toString();
-    		String aideno=txtAideIDUpdate.getText().toString();
-    		String travelno=txtTravelNo.getText().toString();
-    		//Building Parameters
-    		List<NameValuePair> params = new ArrayList<NameValuePair>();
-    		params.add(new BasicNameValuePair("driverid", driverno));
-    		params.add(new BasicNameValuePair("aideid", aideno));
-    		params.add(new BasicNameValuePair("travelno", travelno));
-    		
-    		JSONObject json = jsonParser.makeHttpRequest(url_insert_to_DB,
-    				"POST", params);
-    		return json.getString(driverno);
-    		
-    		}catch(Exception e){
-                return new String("Exception: " + e.getMessage());
-             }
-    	}
-    	
-    	@Override
-		   protected void onPostExecute(String result){
-		      pDialog.dismiss();
-		      
-		     if(result!=""){		    	 
-			    	 try{		    	 
-			    	 
-			    		 JSONArray jArray=new JSONArray(result);
-				    	 JSONObject json_data=null;	    	 
-				    	 json_data=jArray.getJSONObject(0);
-				    	 
-				    	 int success=json_data.getInt("success");
-				    	 String message=json_data.getString("message");
-				    	 
-				    	 Toast.makeText(getApplicationContext(), ""+success+"|"+message, Toast.LENGTH_SHORT).show();
-			    	 
-			    	 String travelno=txtTravelNo.getText().toString();
-			    	 updateTravelNo(1,travelno);
-			    	 
-			    	 
-			    	 
-			    	 }
-			    	 catch(Exception e){
-			    		 
-			    	 }
-		     }else{
-		    	 Toast.makeText(getApplicationContext(), ""+success+"|"+message, Toast.LENGTH_SHORT).show();
-		     }
-    }  
-    }
-    
-    public void DisplayRecords(View v) {		
-		Cursor cursor = myDb.getAllRows();
-		displayRecordSet(cursor);
-	}
-   private void openDB() {
-		myDb = new DBAdapter(this);
-		myDb.open();
-	}
-   private void displayRecordSet(Cursor cursor) {
-		//reset the cursor from start
-		if (cursor.moveToFirst()) {
-			do {
-				
-				String driver = cursor.getString(DBAdapter.COL_DRIVERNO);
-				String aide = cursor.getString(DBAdapter.COL_AIDENO);
-				String travelno = cursor.getString(DBAdapter.COL_TRAVELNO);
-				
-				setData(driver,aide,travelno);
-				Toast.makeText(getApplicationContext(), ""+driver+"|"+aide+"|"+travelno, Toast.LENGTH_SHORT).show();
-			} while(cursor.moveToNext());
-		}
-		
-		// Close the cursor to avoid a resource leak.
-		cursor.close();
-	}
-   private void setData(String driver,String aide,String travelno) {
-		// TODO Auto-generated method stub
-	   txtDriverIDUpdate.setText(driver);
-	   txtAideIDUpdate.setText(aide);
-		
-	}
-   
-   @SuppressWarnings("deprecation")
-public void showAlertDialog(Context context, String title, String message, Boolean status) {
-       AlertDialog alertDialog = new AlertDialog.Builder(context).create();
+    class SigninActivity  extends AsyncTask<String,Void,String>{
 
-       // Setting Dialog Title
-       alertDialog.setTitle(title);
+ 	   public SigninActivity(Context context) {
+ 	   }
 
-       // Setting Dialog Message
-       alertDialog.setMessage(message);
-        
-       // Setting alert dialog icon
-       alertDialog.setIcon((status) ? R.drawable.ic_action_accept : R.drawable.ic_action_warning);
+ 	   @Override
+ 		protected void onPreExecute() {
+ 			super.onPreExecute();
+ 			pDialog = new ProgressDialog(TravelDetails.this);
+ 			pDialog.setMessage("Signing in... Please wait");
+ 			pDialog.setIndeterminate(false);
+ 			pDialog.setCancelable(true);
+ 			pDialog.show();
+ 		}
+ 	   
+ 	   @Override
+ 	   protected String doInBackground(String... arg0) {
+ 	      
+ 	         try{
+ 	            String driver = (String)arg0[0];
+ 	            String aide = (String)arg0[1];
+ 	            String travel = (String)arg0[2];
+ 	            String link="http://rtmitracker.16mb.com/insertUpdate_tblEmpTravel.php";
+ 	            
+ 	            String data  = URLEncoder.encode("driver", "UTF-8") 
+ 	            + "=" + URLEncoder.encode(driver, "UTF-8");
+ 	            
+ 	            data += "&" + URLEncoder.encode("aide", "UTF-8") 
+ 	            + "=" + URLEncoder.encode(aide, "UTF-8");
+ 	            
+ 	           data += "&" + URLEncoder.encode("travel", "UTF-8") 
+ 	   	            + "=" + URLEncoder.encode(travel, "UTF-8");
+ 	            
+ 	            URL url = new URL(link);
+ 	            URLConnection conn = url.openConnection(); 
+ 	            conn.setDoOutput(true); 
+ 	            OutputStreamWriter wr = new OutputStreamWriter
+ 	            (conn.getOutputStream()); 
+ 	            wr.write( data ); 
+ 	            wr.flush(); 
+ 	            BufferedReader reader = new BufferedReader
+ 	            (new InputStreamReader(conn.getInputStream()));
+ 	            StringBuilder sb = new StringBuilder();
+ 	            String line = null;
+ 	            
+ 	            // Read Server Response
+ 	            while((line = reader.readLine()) != null)
+ 	            {
+ 	               sb.append(line);
+ 	               break;
+ 	            }
+ 	            return sb.toString();
+ 	         }catch(Exception e){
+ 	            return new String("Exception: " + e.getMessage());
+ 	         }
+ 	      }
+ 	   @Override
+ 	   protected void onPostExecute(String result){
+ 	      pDialog.dismiss();
+ 	      
+ 	     if(result!=""){
+ 	    	 
+ 	    	 try{    	 
+ 	    	 
+ 	    	 JSONArray jArray=new JSONArray(result);
+ 	    	 JSONObject json_data=null;	    	 
+ 	    	 json_data=jArray.getJSONObject(0);
+ 	    	 
+ 	    	 message=json_data.getString("message");
+ 	    	 int success=json_data.getInt("success");	    	 
+ 	    	 
+ 	    	 if(success==1){
+ 	    		 Intent myIntent = new Intent(TravelDetails.this, LatLongActivity.class);
+ 	    		 //myIntent.putExtra("driverno", usernameField.getText().toString());
+ 				startActivity(myIntent);
+ 	    	 }else{
+ 	    		 displayDialog();
+ 	    	 }  	 
+ 	    	 
+ 	    	 }
+ 	    	 catch(Exception e){
+ 	    		 
+ 	    	 }	    	 
+ 	     }     
+ 	     
+ 	   }
 
-       // Setting OK Button
-       alertDialog.setButton("OK", new DialogInterface.OnClickListener() {
-           public void onClick(DialogInterface dialog, int which) {
-           }
-       });
+	 @SuppressWarnings("deprecation")
+   private void displayDialog(){
+	   AlertDialog alertDialog = new AlertDialog.Builder(
+				TravelDetails.this).create();
 
-       // Showing Alert Message
-       alertDialog.show();
+		// Setting Dialog Title
+		alertDialog.setTitle("Warning!");
+
+		// Setting Dialog Message
+		alertDialog.setMessage(message);
+
+		// Setting Icon to Dialog
+		alertDialog.setIcon(R.drawable.ic_action_warning);
+
+		// Setting OK Button
+		alertDialog.setButton("OK",
+				new DialogInterface.OnClickListener() {
+
+					public void onClick(DialogInterface dialog,
+							int which) {
+					}
+				});
+
+		// Showing Alert Message
+		alertDialog.show();
    }
-   
-   public void updateTravelNo(long rowid,String travelno){
-		myDb.updateTravelNo(rowid,travelno);
-		}
-   
+
+ 	}
+    
+    public void loginPost(View view){
+        String driver = txtDriverIDUpdate.getText().toString();
+        String aide = txtAideIDUpdate.getText().toString();
+        String travel = txtTravelNo.getText().toString();
+        new SigninActivity(this).execute(driver,aide,travel);
+        
+     }
+    @SuppressWarnings("deprecation")
+	public void showAlertDialog(Context context, String title, String message, Boolean status) {
+        AlertDialog alertDialog = new AlertDialog.Builder(context).create();
+ 
+        // Setting Dialog Title
+        alertDialog.setTitle(title);
+ 
+        // Setting Dialog Message
+        alertDialog.setMessage(message);
+         
+        // Setting alert dialog icon
+        alertDialog.setIcon((status) ? R.drawable.ic_action_accept : R.drawable.ic_action_warning);
+ 
+        // Setting OK Button
+        alertDialog.setButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+            }
+        });
+ 
+        // Showing Alert Message
+        alertDialog.show();
+    } 
 }
